@@ -1,11 +1,11 @@
----
-title: "Homework 2"
-author: "Dakota Wilson"
-date: "2/3/2022"
-output: github_document
----
+Homework 2
+================
+Dakota Wilson
+2/3/2022
+
 # Setup
-```{r}
+
+``` r
 library(qrnn)
 ## load prostate data
 prostate <- 
@@ -69,8 +69,11 @@ lin_pred_lm <- predict(lin_fit_lm, data.frame(lpsa=x_grid))
 
 ## plot predictions from 'lm'
 lines(x=x_grid, y=lin_pred_lm, col='pink', lty=2, lwd=2)
+```
 
+![](Homework2_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
 
+``` r
 ##################################
 ## try modifying the loss function
 ##################################
@@ -82,7 +85,11 @@ custom_loss <- function(y, yhat)
 err_grd <- seq(-1,1,length.out=200)
 plot(err_grd, custom_loss(err_grd,0), type='l',
      xlab='y-yhat', ylab='custom loss')
+```
 
+![](Homework2_files/figure-gfm/unnamed-chunk-1-2.png)<!-- -->
+
+``` r
 ## fit linear model with custom loss
 lin_beta_custom <- fit_lin(y=prostate_train$lcavol,
                     x=prostate_train$lpsa,
@@ -98,16 +105,13 @@ lines(x=x_grid, y=lin_pred, col='darkgreen', lwd=2)
 
 ## plot predictions from custom loss
 lines(x=x_grid, y=lin_pred_custom, col='pink', lwd=2, lty=2)
-
-
-
-
-
 ```
 
-#Question 1
+![](Homework2_files/figure-gfm/unnamed-chunk-1-3.png)<!-- -->
 
-``` {r}
+\#Question 1
+
+``` r
 ## custom loss function
 custom_loss <- function(y, yhat)
   abs(y-yhat)
@@ -119,7 +123,11 @@ tilted_loss = function(y, yhat)
 err_grd <- seq(-1,1,length.out=200)
 plot(err_grd, custom_loss(err_grd,0), type='l',
      xlab='y-yhat', ylab='custom loss')
+```
 
+![](Homework2_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
+
+``` r
 ## fit linear model with custom loss
 lin_beta_custom <- fit_lin(y=prostate_train$lcavol,
                     x=prostate_train$lpsa,
@@ -136,8 +144,11 @@ lines(x=x_grid, y=lin_pred, col='darkgreen', lwd=2)
 ## plot predictions from custom loss
 lines(x=x_grid, y=lin_pred_custom, col='pink', lwd=2, lty=2)
 ```
-#  Question 2
-```{r}
+
+![](Homework2_files/figure-gfm/unnamed-chunk-2-2.png)<!-- --> \#
+Question 2
+
+``` r
 ## L2 loss function
 L2_loss <- function(y, yhat)
   (y-yhat)^2
@@ -268,9 +279,11 @@ legend(x =  3.5, y = .5,legend = c('L2 Loss','L1 Loss','Tilted tau = 0.75','Tilt
        lty = 1)
 ```
 
+![](Homework2_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+
 # Question 3
 
-```{r}
+``` r
 ## fit simple non-linear model using numerical optimization
 fit_lin <- function(y, x, loss=L2_loss, beta_init = c(-1.0, 0.0, 0.3)) {
   err <- function(beta)
@@ -284,9 +297,9 @@ predict_lin <- function(x, beta)
   beta[1] + beta[2]*exp(-beta[3]*x)
 ```
 
-
 # Question 4
-```{r}
+
+``` r
 # L2 loss function
 L2_loss <- function(y, yhat)
   (y-yhat)^2
@@ -417,3 +430,4 @@ legend(x =  3.5, y = .5,legend = c('L2 Loss','L1 Loss','Tilted tau = 0.75','Tilt
        lty = 1)
 ```
 
+![](Homework2_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->

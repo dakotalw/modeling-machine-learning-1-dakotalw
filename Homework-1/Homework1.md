@@ -41,46 +41,28 @@ plot_mix_data <- expression({
   rslt <- sapply(cont, lines, col='purple')
 })
 
-eval(plot_mix_data)
+data = data.frame(y = dat$y, x1 = dat$x[,1], x2 = dat$x[,2])
+fit_lm = lm(y~x1+x2,data = data)
+lm_pred = predict(fit_lm, newdata = data.frame(dat$xnew))
+## reshape predictions as a matrix
+lm_pred <- matrix(lm_pred, length(dat$px1), length(dat$px2))
+contour(lm_pred,
+      xlab=expression(x[1]),
+      ylab=expression(x[2]))
 ```
 
 ![](Homework1_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
 
 ``` r
-## fit linear classifier
-#fit_lc <- function(y, x) {
-#  x <- cbind(1, x)
-#  beta <- drop(solve(t(x)%*%x)%*%t(x)%*%y)
-#}
-fit_lc = function(y ,x)
-{
-  beta = coef(lm(y~x))
-}
-## make predictions from linear classifier
-predict_lc <- function(x, beta) {
-  cbind(1, x) %*% beta
-}
-lc_beta <- fit_lc(dat$y, dat$x)
-lc_pred <- predict_lc(dat$xnew, lc_beta)
-## reshape predictions as a matrix
-lc_pred <- matrix(lc_pred, length(dat$px1), length(dat$px2))
-contour(lc_pred,
-      xlab=expression(x[1]),
-      ylab=expression(x[2]))
-```
-
-![](Homework1_files/figure-gfm/unnamed-chunk-2-2.png)<!-- -->
-
-``` r
 ## find the contours in 2D space such that lc_pred == 0.5
-lc_cont <- contourLines(dat$px1, dat$px2, lc_pred, levels=0.5)
+lm_cont <- contourLines(dat$px1, dat$px2, lm_pred, levels=0.5)
 
 ## plot data and decision surface
 eval(plot_mix_data)
-sapply(lc_cont, lines)
+sapply(lm_cont, lines)
 ```
 
-![](Homework1_files/figure-gfm/unnamed-chunk-2-3.png)<!-- -->
+![](Homework1_files/figure-gfm/unnamed-chunk-2-2.png)<!-- -->
 
     ## [[1]]
     ## NULL
@@ -105,54 +87,35 @@ plot_mix_data <- expression({
   rslt <- sapply(cont, lines, col='purple')
 })
 
-eval(plot_mix_data)
+data = data.frame(y = dat$y, x1 = dat$x[,1], x2 = dat$x[,2])
+fit_lm = lm(y~poly(x1,2)+poly(x2,2),data = data)
+lm_pred = predict(fit_lm, newdata = data.frame(dat$xnew))
+## reshape predictions as a matrix
+lm_pred <- matrix(lm_pred, length(dat$px1), length(dat$px2))
+contour(lm_pred,
+      xlab=expression(x[1]),
+      ylab=expression(x[2]))
 ```
 
 ![](Homework1_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
 ``` r
-## fit linear classifier
-#fit_lc <- function(y, x) {
-#  x <- cbind(1, x)
-#  beta <- drop(solve(t(x)%*%x)%*%t(x)%*%y)
-#}
-fit_lc = function(y ,x)
-{
-  beta = coef(lm(y~x))
-}
-## make predictions from linear classifier
-predict_lc <- function(x, beta) {
-  cbind(1, x^2) %*% beta
-}
-lc_beta <- fit_lc(dat$y, dat$x)
-lc_pred <- predict_lc(dat$xnew, lc_beta)
-## reshape predictions as a matrix
-lc_pred <- matrix(lc_pred, length(dat$px1), length(dat$px2))
-contour(lc_pred,
-      xlab=expression(x[1]),
-      ylab=expression(x[2]))
+## find the contours in 2D space such that lc_pred == 0.5
+lm_cont <- contourLines(dat$px1, dat$px2, lm_pred, levels=0.5)
+
+## plot data and decision surface
+eval(plot_mix_data)
+sapply(lm_cont, lines)
 ```
 
 ![](Homework1_files/figure-gfm/unnamed-chunk-3-2.png)<!-- -->
 
-``` r
-## find the contours in 2D space such that lc_pred == 0.5
-lc_cont <- contourLines(dat$px1, dat$px2, lc_pred, levels=0.5)
-
-## plot data and decision surface
-eval(plot_mix_data)
-sapply(lc_cont, lines)
-```
-
-![](Homework1_files/figure-gfm/unnamed-chunk-3-3.png)<!-- -->
-
     ## [[1]]
-    ## NULL
-    ## 
-    ## [[2]]
     ## NULL
 
 ### Question 3
 
 When squaring our terms, the bias is low but there is a tradeoff in
-variance.
+variance. This means that the line may not be as accurate for
+representing the true linear model, but it is consistently close across
+all data points.
