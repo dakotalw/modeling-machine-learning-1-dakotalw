@@ -115,7 +115,20 @@ sapply(lm_cont, lines)
 
 ### Question 3
 
-When squaring our terms, the bias is low but there is a tradeoff in
-variance. This means that the line may not be as accurate for
-representing the true linear model, but it is consistently close across
-all data points.
+In the terms of our model, bias refers to the distance of our prediction
+from the true value that we are trying to predict. A model with high
+bias will oversimplify the model and not pay too much attention to the
+training data.
+
+Variance, on the other hand, refers to the variability of the
+prediction. This can also be though of as how much the model would
+change if different data was used. A model with high variance will very
+tightly fit the training data and is not very flexible with new data.
+
+The bias-variance tradeoff is a phenomena in machine learning models
+that describes how increasing bias will decrease variance and vice
+versa. In order to create a strong model, one must find a good balance
+between bias and variance.
+
+Squaring the terms in our model decreased the bias; it now slightly fits
+the data better, however has increased the variance of the model.
