@@ -338,7 +338,7 @@ L1_loss <- function(y, yhat)
   abs(y-yhat)
 
 ## fit simple non-linear model using numerical optimization
-fit_lin <- function(y, x, loss=L2_loss, beta_init = c(-1.0, 0.0, 0.3)) {
+fit_lin <- function(y, x, loss=L1_loss, beta_init = c(-1.0, 0.0, 0.3)) {
   err <- function(beta)
     mean(loss(y,  beta[1] + beta[2]*exp(-beta[3]*x)))
   beta <- optim(par = beta_init, fn = err)
@@ -368,7 +368,7 @@ tilted_loss_75 = function(y, yhat)
   tilted.abs(y - yhat, tau = 0.75)
 
 ## fit simple non-linear model using numerical optimization
-fit_lin <- function(y, x, loss=L2_loss, beta_init = c(-1.0, 0.0, 0.3)) {
+fit_lin <- function(y, x, loss=tilted_loss_75, beta_init = c(-1.0, 0.0, 0.3)) {
   err <- function(beta)
     mean(loss(y,  beta[1] + beta[2]*exp(-beta[3]*x)))
   beta <- optim(par = beta_init, fn = err)
@@ -394,11 +394,11 @@ lin_pred <- predict_lin(x=x_grid, beta=lin_beta$par)
 lines(x=x_grid, y=lin_pred, col='blue', lwd=2)
 
 ## tilted tau = 0.25
-tilted_loss_25 = function(y, yhat)
-  tilted.abs(y - yhat, tau = 0.25)
+tilted_loss_25 = function(y, yhat, tau = .25)
+  ifelse(y - yhat > 0, tau*(y-yhat), (tau-1)*(y-yhat))
 
 ## fit simple non-linear model using numerical optimization
-fit_lin <- function(y, x, loss=L2_loss, beta_init = c(-1.0, 0.0, 0.3)) {
+fit_lin <- function(y, x, loss=tilted_loss_25, beta_init = c(-1.0, 0.0, 0.3)) {
   err <- function(beta)
     mean(loss(y,  beta[1] + beta[2]*exp(-beta[3]*x)))
   beta <- optim(par = beta_init, fn = err)
