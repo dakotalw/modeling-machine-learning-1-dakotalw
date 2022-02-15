@@ -1,0 +1,123 @@
+---
+title: "Homework 3"
+author: "Dakota Wilson"
+date: "2/14/2022"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(glmnet)
+library(splines)
+library(magrittr)
+```
+
+```{r}
+#load data
+prostate <- 
+  read.table(url(
+    'https://web.stanford.edu/~hastie/ElemStatLearn/datasets/prostate.data'))
+```
+
+## Question 1
+Creates correlation matrix
+
+```{r}
+cor(prostate, use = 'pairwise.complete.obs')
+```
+
+## Question 2
+Splits dataset into training and testing and creates linear regression for lcavol compared to all other variables.
+
+```{r}
+prostate_train <- prostate %>%
+  filter(train == TRUE) %>% 
+  select(-train)
+
+summary(prostate_train)
+
+prostate_test <- prostate %>%
+  filter(train == FALSE) %>% 
+  select(-train)
+
+summary(prostate_test)
+
+fit <- lm(lcavol ~ ., data=prostate_train)
+summary(fit)
+coef(fit)
+residuals(fit)
+```
+
+## Question 3
+Creates loss function and tests on testing subset
+
+```{r}
+L2_loss <- function(y, yhat)
+  (y-yhat)^2
+error <- function(dat, fit, loss=L2_loss)
+  mean(loss(dat$lcavol, predict(fit, newdata=dat)))
+
+## testing error
+error(prostate_test, fit)
+```
+
+## Question 4
+Trains ridge regression model using glmnet
+
+```{r}
+form  <- lcavol ~  lweight + age + lbph + lcp + pgg45 + lpsa + svi + gleason
+x_inp <- model.matrix(form, data=prostate_train)
+y_out <- prostate_train$lcavol
+fit <- glmnet(x=x_inp, y=y_out, lambda=seq(0.5, 0, -0.05))
+print(fit$beta)
+```
+
+## Question 5
+
+```{r}
+error <- function(dat, fit, lam, form, loss=L2_loss) {
+  x_inp <- model.matrix(form, data=dat)
+  y_out <- dat$lcavol
+  y_hat <- predict(fit, newx=x_inp, s=lam)  ## see predict.elnet
+  mean(loss(y_out, y_hat))
+}
+err_train_1 <- sapply(fit$lambda, function(lam) 
+  error(prostate_train, fit, lam, form))
+err_test_1 <- sapply(fit$lambda, function(lam) 
+  error(prostate_test, fit, lam, form))
+
+## plot test/train error
+plot(x=range(fit$lambda),
+     y=range(c(err_train_1, err_test_1)),
+     xlim=rev(range(fit$lambda)),
+     type='n',
+     xlab=expression(lambda),
+     ylab='train/test error')
+points(fit$lambda, err_train_1, pch=19, type='b', col='darkblue')
+points(fit$lambda, err_test_1, pch=19, type='b', col='darkred')
+legend('topright', c('train','test'), lty=1, pch=19,
+       col=c('darkblue','darkred'), bty='n')
+
+
+```
+
+## Question 6
+Plots path diagram
+
+```{r}
+plot(x=range(fit$lambda),
+     y=range(as.matrix(fit$beta)),
+     type='n',
+     xlab=expression(lambda),
+     ylab='Coefficients')
+for(i in 1:nrow(fit$beta)) {
+  points(x=fit$lambda, y=fit$beta[i,], pch=19, col='#00000055')
+  lines(x=fit$lambda, y=fit$beta[i,], col='#00000055')
+}
+text(x=0, y=fit$beta[,ncol(fit$beta)], 
+     labels=rownames(fit$beta),
+     xpd=NA, pos=4, srt=45)
+abline(h=0, lty=3, lwd=2)
+```
+
