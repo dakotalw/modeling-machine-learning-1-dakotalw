@@ -272,7 +272,7 @@ legend(x =  3.5, y = .5,legend = c('L2 Loss','L1 Loss','Tilted tau = 0.75','Tilt
 
 ```{r}
 ## fit simple non-linear model using numerical optimization
-fit_non_lin <- function(y, x, loss, beta_init = c(-1.0, 0.0, 0.3)) {
+fit_non_lin <- function(y, x, loss, beta_init = c(-1.0, 0.0, -0.3)) {
   err <- function(beta)
     mean(loss(y,  beta[1] + beta[2]*exp(-beta[3]*x)))
   beta <- optim(par = beta_init, fn = err)
@@ -317,7 +317,7 @@ x_grid <- seq(min(prostate_train$lpsa),
               max(prostate_train$lpsa),
               length.out=100)
 lin_pred <- predict_non_lin(x=x_grid, beta=lin_beta$par)
-print(lin_pred)
+
 lines(x=x_grid, y=lin_pred, col='purple', lwd=2)
 
 ## fit linear model
