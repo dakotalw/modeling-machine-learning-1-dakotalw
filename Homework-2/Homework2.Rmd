@@ -272,7 +272,7 @@ legend(x =  3.5, y = .5,legend = c('L2 Loss','L1 Loss','Tilted tau = 0.75','Tilt
 
 ```{r}
 ## fit simple non-linear model using numerical optimization
-fit_lin <- function(y, x, loss=L2_loss, beta_init = c(-1.0, 0.0, 0.3)) {
+fit_non_lin <- function(y, x, loss, beta_init = c(-1.0, 0.0, 0.3)) {
   err <- function(beta)
     mean(loss(y,  beta[1] + beta[2]*exp(-beta[3]*x)))
   beta <- optim(par = beta_init, fn = err)
@@ -280,31 +280,18 @@ fit_lin <- function(y, x, loss=L2_loss, beta_init = c(-1.0, 0.0, 0.3)) {
 }
 
 ## make predictions from non-linear model
-predict_lin <- function(x, beta)
+predict_non_lin <- function(x, beta)
   beta[1] + beta[2]*exp(-beta[3]*x)
 ```
 
 
 # Question 4
+
 ```{r}
-# L2 loss function
-L2_loss <- function(y, yhat)
-  (y-yhat)^2
-
-## fit simple non-linear model using numerical optimization
-fit_lin <- function(y, x, loss=L2_loss, beta_init = c(-1.0, 0.0, 0.3)) {
-  err <- function(beta)
-    mean(loss(y,  beta[1] + beta[2]*exp(-beta[3]*x)))
-  beta <- optim(par = beta_init, fn = err)
-  return(beta)
-}
-
-## make predictions from non-linear model
-predict_lin <- function(x, beta)
-  beta[1] + beta[2]*exp(-beta[3]*x)
-
-## fit linear model
-lin_beta <- fit_lin(y=prostate_train$lcavol,
+#PLOTS 
+plot_psa_data()
+## fit nonlinear model
+lin_beta <- fit_non_lin(y=prostate_train$lcavol,
                     x=prostate_train$lpsa,
                     loss=L2_loss)
 
@@ -312,32 +299,16 @@ lin_beta <- fit_lin(y=prostate_train$lcavol,
 x_grid <- seq(min(prostate_train$lpsa),
               max(prostate_train$lpsa),
               length.out=100)
-lin_pred <- predict_lin(x=x_grid, beta=lin_beta$par)
+lin_pred <- predict_non_lin(x=x_grid, beta=lin_beta$par)
 
 ## plot data
-plot_psa_data()
 
 ## plot predictions
 lines(x=x_grid, y=lin_pred, col='darkgreen', lwd=2)
 
-## L1 loss function
-L1_loss <- function(y, yhat)
-  abs(y-yhat)
-
-## fit simple non-linear model using numerical optimization
-fit_lin <- function(y, x, loss=L1_loss, beta_init = c(-1.0, 0.0, 0.3)) {
-  err <- function(beta)
-    mean(loss(y,  beta[1] + beta[2]*exp(-beta[3]*x)))
-  beta <- optim(par = beta_init, fn = err)
-  return(beta)
-}
-
-## make predictions from non-linear model
-predict_lin <- function(x, beta)
-  beta[1] + beta[2]*exp(-beta[3]*x)
 
 ## fit linear model
-lin_beta <- fit_lin(y=prostate_train$lcavol,
+lin_beta <- fit_non_lin(y=prostate_train$lcavol,
                     x=prostate_train$lpsa,
                     loss=L1_loss)
 
@@ -345,59 +316,12 @@ lin_beta <- fit_lin(y=prostate_train$lcavol,
 x_grid <- seq(min(prostate_train$lpsa),
               max(prostate_train$lpsa),
               length.out=100)
-lin_pred <- predict_lin(x=x_grid, beta=lin_beta$par)
-
-## plot predictions
-lines(x=x_grid, y=lin_pred, col='pink', lwd=2)
-
-## tilted tau = 0.75
-tilted_loss_75 = function(y, yhat)
-  tilted.abs(y - yhat, tau = 0.75)
-
-## fit simple non-linear model using numerical optimization
-fit_lin <- function(y, x, loss=tilted_loss_75, beta_init = c(-1.0, 0.0, 0.3)) {
-  err <- function(beta)
-    mean(loss(y,  beta[1] + beta[2]*exp(-beta[3]*x)))
-  beta <- optim(par = beta_init, fn = err)
-  return(beta)
-}
-
-## make predictions from non-linear model
-predict_lin <- function(x, beta)
-  beta[1] + beta[2]*exp(-beta[3]*x)
+lin_pred <- predict_non_lin(x=x_grid, beta=lin_beta$par)
+print(lin_pred)
+lines(x=x_grid, y=lin_pred, col='purple', lwd=2)
 
 ## fit linear model
-lin_beta <- fit_lin(y=prostate_train$lcavol,
-                    x=prostate_train$lpsa,
-                    loss=tilted_loss_75)
-
-## compute predictions for a grid of inputs
-x_grid <- seq(min(prostate_train$lpsa),
-              max(prostate_train$lpsa),
-              length.out=100)
-lin_pred <- predict_lin(x=x_grid, beta=lin_beta$par)
-
-## plot predictions
-lines(x=x_grid, y=lin_pred, col='blue', lwd=2)
-
-## tilted tau = 0.25
-tilted_loss_25 = function(y, yhat, tau = .25)
-  ifelse(y - yhat > 0, tau*(y-yhat), (tau-1)*(y-yhat))
-
-## fit simple non-linear model using numerical optimization
-fit_lin <- function(y, x, loss=tilted_loss_25, beta_init = c(-1.0, 0.0, 0.3)) {
-  err <- function(beta)
-    mean(loss(y,  beta[1] + beta[2]*exp(-beta[3]*x)))
-  beta <- optim(par = beta_init, fn = err)
-  return(beta)
-}
-
-## make predictions from non-linear model
-predict_lin <- function(x, beta)
-  beta[1] + beta[2]*exp(-beta[3]*x)
-
-## fit linear model
-lin_beta <- fit_lin(y=prostate_train$lcavol,
+lin_beta <- fit_non_lin(y=prostate_train$lcavol,
                     x=prostate_train$lpsa,
                     loss=tilted_loss_25)
 
@@ -405,15 +329,25 @@ lin_beta <- fit_lin(y=prostate_train$lcavol,
 x_grid <- seq(min(prostate_train$lpsa),
               max(prostate_train$lpsa),
               length.out=100)
-lin_pred <- predict_lin(x=x_grid, beta=lin_beta$par)
+lin_pred <- predict_non_lin(x=x_grid, beta=lin_beta$par)
 
-## plot predictions
+lines(x=x_grid, y=lin_pred, col='blue', lwd=2)
+
+## fit linear model
+lin_beta <- fit_non_lin(y=prostate_train$lcavol,
+                    x=prostate_train$lpsa,
+                    loss=tilted_loss_75)
+
+## compute predictions for a grid of inputs
+x_grid <- seq(min(prostate_train$lpsa),
+              max(prostate_train$lpsa),
+              length.out=100)
+lin_pred <- predict_non_lin(x=x_grid, beta=lin_beta$par)
+
 lines(x=x_grid, y=lin_pred, col='red', lwd=2)
 
-# Legend
-
 legend(x =  3.5, y = .5,legend = c('L2 Loss','L1 Loss','Tilted tau = 0.75','Tilted tau = 0.25'),
-       col = c('darkgreen','pink','blue','red'),
+       col = c('darkgreen','purple','blue','red'),
        lty = 1)
 ```
 
