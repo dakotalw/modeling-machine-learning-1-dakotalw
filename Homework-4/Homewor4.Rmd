@@ -8,6 +8,11 @@ output: github_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(ISLR2)
+library(e1071)
+library(tidyverse)
+library(stats)
+library(MASS)
+library(class)
 weekly = ISLR2::Weekly
 ```
 
@@ -75,37 +80,151 @@ This means that only 56.1% of my predictions are considered accurate.
 **(d) Now fit the logistic regression model using a training data period from 1990 to 2008, with Lag2 as the only predictor. Compute the confusion matrix and the overall fraction of correct predictions for the held out data (that is, the data from 2009 and 2010).**
 
 ```{r}
-glm.fit = glm(Direction ~ Lag2, data = weekly, family = binomial)
+train = weekly %>% filter(Year <= 2008)
+test = weekly %>% filter(Year >= 2009)
+glm.fit = glm(Direction ~ Lag2, data = train, family = binomial)
 summary(glm.fit)
-glm.probs <- predict(glm.fit, type = "response")
-contrasts(weekly$Direction)
-glm.pred <- rep("Down", length(weekly$Direction))
+glm.probs <- predict(glm.fit,test, type = "response")
+contrasts(test$Direction)
+glm.pred <- rep("Down", length(test$Direction))
 glm.pred[glm.probs > .5] = "Up"
-table(glm.pred, weekly$Direction)
-(579+33)/1089
-mean(glm.pred ==  weekly$Direction)
+table(glm.pred, test$Direction)
+mean(glm.pred ==  test$Direction)
 ```
+
+This means that only 62.5% of my predictions are considered accurate.
 
 **Repeat (d) using LDA**
 
 ```{r}
-
+lda.fit <- lda(Direction~ Lag2,data = train)
+summary(lda.fit)
+lda.probs <- predict(lda.fit,test, type = "response")
+contrasts(test$Direction)
+lda.pred <- rep("Down", length(test$Direction))
+lda.pred[lda.probs$class == 'Up'] = "Up"
+table(lda.pred, test$Direction)
+mean(lda.pred ==  test$Direction)
+plot(lda.fit)
 ```
+
+Once agaibn, 62.5%
 
 **(f) Repeat (d) using QDA.**
 
+```{r}
+qda.fit <- qda(Direction~ Lag2,data = train)
+qda.probs <- predict(qda.fit,test, type = "response")
+contrasts(test$Direction)
+qda.pred <- rep("Down", length(test$Direction))
+qda.pred[qda.probs$class == 'Up'] = "Up"
+table(qda.pred, test$Direction)
+mean(qda.pred == test$Direction)
+```
 
+58.6%. Using QDA, my model predicted every one to be Up.
 
 **(g) Repeat (d) using KNN with K = 1.**
 
+```{r}
+train.X = cbind(train$Lag2)
+test.X = cbind(test$Lag2)
+train.Direction = train$Direction
+knn.pred  = knn(train.X, test.X, train.Direction,  k =1)
+table(knn.pred, test$Direction)
+mean(knn.pred == test$Direction)
+```
 
+50.9%
 
 **(h) Repeat (d) using naive Bayes.**
 
+```{r}
+nb.fit <- naiveBayes(Direction ~ Lag2, data = train)
+nb.fit
+nb.class <- predict(nb.fit, test)
+table(nb.class, test$Direction)
+mean(nb.class == test$Direction)
+```
 
+58.6% once again 
 
 **(i) Which of these methods appears to provide the best results on this data?**
 
+Logistic regression and linear discriminant analysis had the best predictors for this particular dataset.
 
 
 **(j) Experiment with different combinations of predictors, including possible transformations and interactions, for each of the methods. Report the variables, method, and associated confusion matrix that appears to provide the best results on the held out data. Note that you should also experiment with values for K in the KNN classifier.**
+
+LM:
+
+```{r}
+glm.fit = glm(Direction ~ Lag2+Lag5, data = train, family = quasibinomial)
+summary(glm.fit)
+glm.probs <- predict(glm.fit,test, type = "response")
+contrasts(test$Direction)
+glm.pred <- rep("Down", length(test$Direction))
+glm.pred[glm.probs > .5] = "Up"
+table(glm.pred, test$Direction)
+mean(glm.pred ==  test$Direction)
+```
+
+For linear regression, I was not able to get a  higher result than the original .625 given the train and test sets outlined. The best I got was .6057 with Lag2 and Lag5.
+
+LDA:
+
+```{r}
+lda.fit <- lda(Direction~ Lag2+Year,data = train)
+lda.probs <- predict(lda.fit,test, type = "response")
+contrasts(test$Direction)
+lda.pred <- rep("Down", length(test$Direction))
+lda.pred[lda.probs$class == 'Up'] = "Up"
+table(lda.pred, test$Direction)
+mean(lda.pred ==  test$Direction)
+```
+
+Once again, with LDA, I was not able to get a higher score however I did get a score of .5865 using Year and Lag2.
+
+QDA:
+
+```{r}
+qda.fit <- qda(Direction~ Lag2+Lag3,data = train)
+qda.probs <- predict(qda.fit,test, type = "response")
+contrasts(test$Direction)
+qda.pred <- rep("Down", length(test$Direction))
+qda.pred[qda.probs$class == 'Up'] = "Up"
+table(qda.pred, test$Direction)
+mean(qda.pred == test$Direction)
+```
+
+With QDA, I was able to improve the model and got a score of .605 by using Lag2 and Lag3.
+
+Naive-Bayes:
+
+```{r}
+nb.fit <- naiveBayes(Direction ~ Lag4, data = train)
+nb.fit
+nb.class <- predict(nb.fit, test)
+table(nb.class, test$Direction)
+mean(nb.class == test$Direction)
+```
+
+Once again, I was not able to improve the naive-bayes model. I did however notice a decent difference in the confusion matrices depending on variables chosen.
+
+K - means:
+```{r}
+train.X = cbind(train$Lag2)
+test.X = cbind(test$Lag2)
+train.Direction = train$Direction
+acc_score = seq(0,0)
+for (i in 1:100){
+knn.pred  = knn(train.X, test.X, train.Direction,  k = i)
+acc_score[i] = mean(knn.pred == test$Direction)
+}
+acc_score = cbind(acc_score)
+plot(acc_score)
+
+
+```
+
+k = 47 gives me the strongest predictor using only Lag2 and the described train dataset. The final accuracy value comes out to .615.

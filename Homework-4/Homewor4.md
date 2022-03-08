@@ -194,36 +194,38 @@ confusion matrix and the overall fraction of correct predictions for the
 held out data (that is, the data from 2009 and 2010).**
 
 ``` r
-glm.fit = glm(Direction ~ Lag2, data = weekly, family = binomial)
+train = weekly %>% filter(Year <= 2008)
+test = weekly %>% filter(Year >= 2009)
+glm.fit = glm(Direction ~ Lag2, data = train, family = binomial)
 summary(glm.fit)
 ```
 
     ## 
     ## Call:
-    ## glm(formula = Direction ~ Lag2, family = binomial, data = weekly)
+    ## glm(formula = Direction ~ Lag2, family = binomial, data = train)
     ## 
     ## Deviance Residuals: 
     ##    Min      1Q  Median      3Q     Max  
-    ## -1.564  -1.267   1.008   1.086   1.386  
+    ## -1.536  -1.264   1.021   1.091   1.368  
     ## 
     ## Coefficients:
-    ##             Estimate Std. Error z value Pr(>|z|)    
-    ## (Intercept)  0.21473    0.06123   3.507 0.000453 ***
-    ## Lag2         0.06279    0.02636   2.382 0.017230 *  
+    ##             Estimate Std. Error z value Pr(>|z|)   
+    ## (Intercept)  0.20326    0.06428   3.162  0.00157 **
+    ## Lag2         0.05810    0.02870   2.024  0.04298 * 
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
     ## (Dispersion parameter for binomial family taken to be 1)
     ## 
-    ##     Null deviance: 1496.2  on 1088  degrees of freedom
-    ## Residual deviance: 1490.4  on 1087  degrees of freedom
-    ## AIC: 1494.4
+    ##     Null deviance: 1354.7  on 984  degrees of freedom
+    ## Residual deviance: 1350.5  on 983  degrees of freedom
+    ## AIC: 1354.5
     ## 
     ## Number of Fisher Scoring iterations: 4
 
 ``` r
-glm.probs <- predict(glm.fit, type = "response")
-contrasts(weekly$Direction)
+glm.probs <- predict(glm.fit,test, type = "response")
+contrasts(test$Direction)
 ```
 
     ##      Up
@@ -231,41 +233,370 @@ contrasts(weekly$Direction)
     ## Up    1
 
 ``` r
-glm.pred <- rep("Down", length(weekly$Direction))
+glm.pred <- rep("Down", length(test$Direction))
 glm.pred[glm.probs > .5] = "Up"
-table(glm.pred, weekly$Direction)
+table(glm.pred, test$Direction)
 ```
 
     ##         
-    ## glm.pred Down  Up
-    ##     Down   33  26
-    ##     Up    451 579
+    ## glm.pred Down Up
+    ##     Down    9  5
+    ##     Up     34 56
 
 ``` r
-(579+33)/1089
+mean(glm.pred ==  test$Direction)
 ```
 
-    ## [1] 0.5619835
+    ## [1] 0.625
 
-``` r
-mean(glm.pred ==  weekly$Direction)
-```
-
-    ## [1] 0.5619835
+This means that only 62.5% of my predictions are considered accurate.
 
 **Repeat (d) using LDA**
 
+``` r
+lda.fit <- lda(Direction~ Lag2,data = train)
+summary(lda.fit)
+```
+
+    ##         Length Class  Mode     
+    ## prior   2      -none- numeric  
+    ## counts  2      -none- numeric  
+    ## means   2      -none- numeric  
+    ## scaling 1      -none- numeric  
+    ## lev     2      -none- character
+    ## svd     1      -none- numeric  
+    ## N       1      -none- numeric  
+    ## call    3      -none- call     
+    ## terms   3      terms  call     
+    ## xlevels 0      -none- list
+
+``` r
+lda.probs <- predict(lda.fit,test, type = "response")
+contrasts(test$Direction)
+```
+
+    ##      Up
+    ## Down  0
+    ## Up    1
+
+``` r
+lda.pred <- rep("Down", length(test$Direction))
+lda.pred[lda.probs$class == 'Up'] = "Up"
+table(lda.pred, test$Direction)
+```
+
+    ##         
+    ## lda.pred Down Up
+    ##     Down    9  5
+    ##     Up     34 56
+
+``` r
+mean(lda.pred ==  test$Direction)
+```
+
+    ## [1] 0.625
+
+``` r
+plot(lda.fit)
+```
+
+![](Homewor4_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
+Once agaibn, 62.5%
+
 **(f) Repeat (d) using QDA.**
+
+``` r
+qda.fit <- qda(Direction~ Lag2,data = train)
+qda.probs <- predict(qda.fit,test, type = "response")
+contrasts(test$Direction)
+```
+
+    ##      Up
+    ## Down  0
+    ## Up    1
+
+``` r
+qda.pred <- rep("Down", length(test$Direction))
+qda.pred[qda.probs$class == 'Up'] = "Up"
+table(qda.pred, test$Direction)
+```
+
+    ##         
+    ## qda.pred Down Up
+    ##       Up   43 61
+
+``` r
+mean(qda.pred == test$Direction)
+```
+
+    ## [1] 0.5865385
+
+58.6%. Using QDA, my model predicted every one to be Up.
 
 **(g) Repeat (d) using KNN with K = 1.**
 
+``` r
+train.X = cbind(train$Lag2)
+test.X = cbind(test$Lag2)
+train.Direction = train$Direction
+knn.pred  = knn(train.X, test.X, train.Direction,  k =1)
+table(knn.pred, test$Direction)
+```
+
+    ##         
+    ## knn.pred Down Up
+    ##     Down   21 29
+    ##     Up     22 32
+
+``` r
+mean(knn.pred == test$Direction)
+```
+
+    ## [1] 0.5096154
+
+50.9%
+
 **(h) Repeat (d) using naive Bayes.**
+
+``` r
+nb.fit <- naiveBayes(Direction ~ Lag2, data = train)
+nb.fit
+```
+
+    ## 
+    ## Naive Bayes Classifier for Discrete Predictors
+    ## 
+    ## Call:
+    ## naiveBayes.default(x = X, y = Y, laplace = laplace)
+    ## 
+    ## A-priori probabilities:
+    ## Y
+    ##      Down        Up 
+    ## 0.4477157 0.5522843 
+    ## 
+    ## Conditional probabilities:
+    ##       Lag2
+    ## Y             [,1]     [,2]
+    ##   Down -0.03568254 2.199504
+    ##   Up    0.26036581 2.317485
+
+``` r
+nb.class <- predict(nb.fit, test)
+table(nb.class, test$Direction)
+```
+
+    ##         
+    ## nb.class Down Up
+    ##     Down    0  0
+    ##     Up     43 61
+
+``` r
+mean(nb.class == test$Direction)
+```
+
+    ## [1] 0.5865385
+
+58.6% once again
 
 **(i) Which of these methods appears to provide the best results on this
 data?**
+
+Logistic regression and linear discriminant analysis had the best
+predictors for this particular dataset.
 
 **(j) Experiment with different combinations of predictors, including
 possible transformations and interactions, for each of the methods.
 Report the variables, method, and associated confusion matrix that
 appears to provide the best results on the held out data. Note that you
 should also experiment with values for K in the KNN classifier.**
+
+LM:
+
+``` r
+glm.fit = glm(Direction ~ Lag2+Lag5, data = train, family = quasibinomial)
+summary(glm.fit)
+```
+
+    ## 
+    ## Call:
+    ## glm(formula = Direction ~ Lag2 + Lag5, family = quasibinomial, 
+    ##     data = train)
+    ## 
+    ## Deviance Residuals: 
+    ##    Min      1Q  Median      3Q     Max  
+    ## -1.774  -1.257   1.013   1.091   1.403  
+    ## 
+    ## Coefficients:
+    ##             Estimate Std. Error t value Pr(>|t|)   
+    ## (Intercept)  0.20741    0.06456   3.213  0.00136 **
+    ## Lag2         0.05652    0.02890   1.956  0.05078 . 
+    ## Lag5        -0.02973    0.02877  -1.033  0.30172   
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## (Dispersion parameter for quasibinomial family taken to be 1.0033)
+    ## 
+    ##     Null deviance: 1354.7  on 984  degrees of freedom
+    ## Residual deviance: 1349.5  on 982  degrees of freedom
+    ## AIC: NA
+    ## 
+    ## Number of Fisher Scoring iterations: 4
+
+``` r
+glm.probs <- predict(glm.fit,test, type = "response")
+contrasts(test$Direction)
+```
+
+    ##      Up
+    ## Down  0
+    ## Up    1
+
+``` r
+glm.pred <- rep("Down", length(test$Direction))
+glm.pred[glm.probs > .5] = "Up"
+table(glm.pred, test$Direction)
+```
+
+    ##         
+    ## glm.pred Down Up
+    ##     Down    7  5
+    ##     Up     36 56
+
+``` r
+mean(glm.pred ==  test$Direction)
+```
+
+    ## [1] 0.6057692
+
+For linear regression, I was not able to get a higher result than the
+original .625 given the train and test sets outlined. The best I got was
+.6057 with Lag2 and Lag5.
+
+LDA:
+
+``` r
+lda.fit <- lda(Direction~ Lag2+Year,data = train)
+lda.probs <- predict(lda.fit,test, type = "response")
+contrasts(test$Direction)
+```
+
+    ##      Up
+    ## Down  0
+    ## Up    1
+
+``` r
+lda.pred <- rep("Down", length(test$Direction))
+lda.pred[lda.probs$class == 'Up'] = "Up"
+table(lda.pred, test$Direction)
+```
+
+    ##         
+    ## lda.pred Down Up
+    ##     Down   13 13
+    ##     Up     30 48
+
+``` r
+mean(lda.pred ==  test$Direction)
+```
+
+    ## [1] 0.5865385
+
+Once again, with LDA, I was not able to get a higher score however I did
+get a score of .5865 using Year and Lag2.
+
+QDA:
+
+``` r
+qda.fit <- qda(Direction~ Lag2+Lag3,data = train)
+qda.probs <- predict(qda.fit,test, type = "response")
+contrasts(test$Direction)
+```
+
+    ##      Up
+    ## Down  0
+    ## Up    1
+
+``` r
+qda.pred <- rep("Down", length(test$Direction))
+qda.pred[qda.probs$class == 'Up'] = "Up"
+table(qda.pred, test$Direction)
+```
+
+    ##         
+    ## qda.pred Down Up
+    ##     Down    4  2
+    ##     Up     39 59
+
+``` r
+mean(qda.pred == test$Direction)
+```
+
+    ## [1] 0.6057692
+
+With QDA, I was able to improve the model and got a score of .605 by
+using Lag2 and Lag3.
+
+Naive-Bayes:
+
+``` r
+nb.fit <- naiveBayes(Direction ~ Lag4, data = train)
+nb.fit
+```
+
+    ## 
+    ## Naive Bayes Classifier for Discrete Predictors
+    ## 
+    ## Call:
+    ## naiveBayes.default(x = X, y = Y, laplace = laplace)
+    ## 
+    ## A-priori probabilities:
+    ## Y
+    ##      Down        Up 
+    ## 0.4477157 0.5522843 
+    ## 
+    ## Conditional probabilities:
+    ##       Lag4
+    ## Y            [,1]     [,2]
+    ##   Down 0.15925624 2.400042
+    ##   Up   0.09220956 2.165612
+
+``` r
+nb.class <- predict(nb.fit, test)
+table(nb.class, test$Direction)
+```
+
+    ##         
+    ## nb.class Down Up
+    ##     Down    7 12
+    ##     Up     36 49
+
+``` r
+mean(nb.class == test$Direction)
+```
+
+    ## [1] 0.5384615
+
+Once again, I was not able to improve the naive-bayes model. I did
+however notice a decent difference in the confusion matrices depending
+on variables chosen.
+
+K - means:
+
+``` r
+train.X = cbind(train$Lag2)
+test.X = cbind(test$Lag2)
+train.Direction = train$Direction
+acc_score = seq(0,0)
+for (i in 1:100){
+knn.pred  = knn(train.X, test.X, train.Direction,  k = i)
+acc_score[i] = mean(knn.pred == test$Direction)
+}
+acc_score = cbind(acc_score)
+plot(acc_score)
+```
+
+![](Homewor4_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
+
+k = 47 gives me the strongest predictor using only Lag2 and the
+described train dataset. The final accuracy value comes out to .615.
