@@ -1,19 +1,9 @@
----
-title: "Homework 5"
-author: "Dakota Wilson"
-date: "3/2/2022"
-output: github_document
----
+Homework 5
+================
+Dakota Wilson
+3/2/2022
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-library('MASS') ## for 'mcycle'
-library('manipulate') ## for 'manipulate'
-library('boot')
-library('caret')
-```
-
-```{r}
+``` r
 mcycle = mcycle
 
 y <- mcycle$accel
@@ -22,9 +12,11 @@ x <- matrix(mcycle$times, length(mcycle$times), 1)
 plot(x, y, xlab="Time (ms)", ylab="Acceleration (g)")
 ```
 
+![](Homework5_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
+
 First, I split the data into a training and validation set.
 
-```{r}
+``` r
 set.seed(23188)
 #75% of dataset length is equal to 100
 train_index = sample(1:nrow(mcycle), 100, replace = F) 
@@ -36,13 +28,19 @@ ytest = validation$accel
 xtest = matrix(validation$times, length(validation$times),1)
 
 plot(xtrain,ytrain)
-plot(xtest,ytest)
-
 ```
+
+![](Homework5_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
+
+``` r
+plot(xtest,ytest)
+```
+
+![](Homework5_files/figure-gfm/unnamed-chunk-2-2.png)<!-- -->
 
 All of my given functions:
 
-```{r}
+``` r
 ## Epanechnikov kernel function
 ## x  - n x p matrix of training inputs
 ## x0 - 1 x p input where to make prediction
@@ -148,12 +146,25 @@ y_hat <- nadaraya_watson(ytrain, xtrain, xtrain,
 
 ## view kernel (smoother) matrix
 matrix_image(attr(y_hat, 'k'))
+```
 
+![](Homework5_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+
+``` r
 ## compute effective degrees of freedom
 edf <- effective_df(ytrain, xtrain, kernel_epanechnikov, lambda=5)
 aic(ytrain, y_hat, edf)
-bic(ytrain, y_hat, edf)
+```
 
+    ## [1] 766.5437
+
+``` r
+bic(ytrain, y_hat, edf)
+```
+
+    ## [1] 766.7692
+
+``` r
 ## create a grid of inputs 
 x_plot <- matrix(seq(min(xtrain),max(xtrain),length.out=100),100,1)
 
@@ -166,11 +177,15 @@ plot(xtrain, ytrain, xlab="Time (ms)", ylab="Acceleration (g)")
 lines(x_plot, y_hat_plot, col="#882255", lwd=2) 
 ```
 
+![](Homework5_files/figure-gfm/unnamed-chunk-3-2.png)<!-- -->
+
 Running Nadaraya-Watson method with the k-NN kernel function
 
-With the squared-error loss function, compute and plot the training error, AIC, BIC, and validation error (using the validation data) as functions of the tuning parameter.
+With the squared-error loss function, compute and plot the training
+error, AIC, BIC, and validation error (using the validation data) as
+functions of the tuning parameter.
 
-```{r}
+``` r
 aic_results = rep(NA, 20)
 bic_results = rep(NA, 20)
 train_error = rep(NA, 20)
@@ -198,13 +213,22 @@ legend("topright", legend=c("Validation error", "AIC", "BIC", "Training Error"),
        col=c("purple", "red", "blue", "green"), lty=1)
 ```
 
-For each value of the tuning parameter, Perform 5-fold cross-validation using the combined training and validation data. This results in 5 estimates of test error per tuning parameter value.
+![](Homework5_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->
 
-```{r}
+For each value of the tuning parameter, Perform 5-fold cross-validation
+using the combined training and validation data. This results in 5
+estimates of test error per tuning parameter value.
+
+``` r
 inc_flds  <- createFolds(y, k=5)
 
 sapply(inc_flds, length)  ## not all the same length
+```
 
+    ## Fold1 Fold2 Fold3 Fold4 Fold5 
+    ##    28    26    26    26    27
+
+``` r
 cv <- function(kNN = 10, flds=inc_flds) {
   cverr <- rep(NA, length(flds))
   for(tst_idx in 1:length(flds)) { ## for each fold
@@ -225,16 +249,41 @@ cv <- function(kNN = 10, flds=inc_flds) {
 ## Compute 5-fold CV for kNN = 1:20
 cverrs <- sapply(1:20, cv)
 print(cverrs) ## rows are k-folds (1:5), cols are kNN (1:20)
+```
+
+    ##           [,1]      [,2]     [,3]     [,4]     [,5]     [,6]     [,7]     [,8]
+    ## [1,] 1025.6646  674.0192 642.4078 467.9477 500.8400 421.7520 408.1544 355.2861
+    ## [2,]  498.5445  244.7173 251.9167 258.9457 286.6859 271.3245 292.2086 316.4044
+    ## [3,]  997.5279  747.1332 893.2062 701.3087 777.0905 788.3075 778.9466 896.6980
+    ## [4,]  984.0191 1005.6088 758.8078 714.9551 700.2453 617.7582 704.6260 684.3915
+    ## [5,]  800.4718  931.0446 798.3913 736.8418 754.8788 819.3964 895.0111 914.5529
+    ##          [,9]    [,10]    [,11]    [,12]    [,13]    [,14]    [,15]    [,16]
+    ## [1,] 320.6804 315.7538 304.0396 275.1101 273.7478 288.3415 282.4388 315.9204
+    ## [2,] 339.5174 343.9550 350.9265 355.4130 369.6273 364.7590 367.9813 388.6055
+    ## [3,] 833.6801 826.3568 841.0482 845.6023 881.3564 848.7351 847.1965 876.0217
+    ## [4,] 736.7815 739.5727 762.9971 784.0782 782.2453 761.7436 776.2222 768.7183
+    ## [5,] 840.6653 792.7902 789.7923 778.2946 867.2053 880.1958 865.4060 846.6777
+    ##         [,17]    [,18]    [,19]     [,20]
+    ## [1,] 344.5581 365.5581 373.0379  425.7504
+    ## [2,] 378.0653 377.6841 372.2444  386.7506
+    ## [3,] 859.1833 891.3273 946.4704  938.3830
+    ## [4,] 728.2600 771.3890 801.4611  807.7661
+    ## [5,] 854.6132 883.0048 954.1518 1005.0201
+
+``` r
 cverrs_mean <- apply(cverrs, 2, mean)
 cverrs_sd   <- apply(cverrs, 2, sd)
 ```
 
-
 # 5. Plot CV-estimated test error
 
-Plot the CV-estimated test error (average of the five estimates from each fold) as a function of the tuning parameter. Add vertical line segments to the figure (using the segments function in R) that represent one “standard error” of the CV-estimated test error (standard deviation of the five estimates from each fold).
+Plot the CV-estimated test error (average of the five estimates from
+each fold) as a function of the tuning parameter. Add vertical line
+segments to the figure (using the segments function in R) that represent
+one “standard error” of the CV-estimated test error (standard deviation
+of the five estimates from each fold).
 
-```{r}
+``` r
 ## Plot the results of 5-fold CV for kNN = 1:20
 plot(x=1:20, y=cverrs_mean, 
      ylim=range(cverrs),
@@ -247,9 +296,13 @@ points(x=best_idx, y=cverrs_mean[best_idx], pch=20)
 abline(h=cverrs_mean[best_idx] + cverrs_sd[best_idx], lty=3)
 ```
 
+![](Homework5_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
+Interpret the resulting figures and select a suitable value for the
+tuning parameter.
 
-Interpret the resulting figures and select a suitable value for the tuning parameter.
-
-We want to select the K value that is largest while still falling within one standard error of the minimum error. In this example, the minimum error is found at k = 4, with the dotted line representing the highest point in the standard error. k = 20 is the largest K value that still falls beneath this dotted line.
-
+We want to select the K value that is largest while still falling within
+one standard error of the minimum error. In this example, the minimum
+error is found at k = 4, with the dotted line representing the highest
+point in the standard error. k = 20 is the largest K value that still
+falls beneath this dotted line.
