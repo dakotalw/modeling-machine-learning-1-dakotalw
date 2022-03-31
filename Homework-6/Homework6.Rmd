@@ -1,0 +1,72 @@
+---
+title: "Homework 6"
+author: "Dakota Wilson"
+date: "3/29/2022"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(randomForest)
+library(caret)
+```
+### First, I load in  the  data
+
+```{r}
+vowel = read.csv(url("https://web.stanford.edu/~hastie/ElemStatLearn/datasets/vowel.train"))
+vowel = vowel[,2:ncol(vowel)]
+```
+
+##1. Convert the response variable in the “vowel.train” data frame to a factor variable prior to training, so that “randomForest” does classification rather than regression.
+
+```{r}
+vowel$y = as.factor(vowel$y)
+```
+
+
+##2.Review the documentation for the “randomForest” function.
+
+##3. Fit the random forest model to the vowel data using all of the 11 features using the default values of the tuning parameters.
+
+```{r}
+fit = randomForest(y~., data = vowel)
+print(fit)
+plot(fit)
+```
+
+
+##4. Use 5-fold CV and tune the model by performing a grid search for the following tuning parameters: 1) the number of variables randomly sampled as candidates at each split; consider values 3, 4, and 5, and 2) the minimum size of terminal nodes; consider a sequence (1, 5, 10, 20, 40, and 80).
+
+```{r}
+set.seed(23188)
+#Declare min node sizes and sampled variables
+sampled_variables =  c(3,4,5)
+node_size = c(1,5,10,20,40,80)
+#Declare cross-validation grid search with 5 folds.
+control = trainControl(method = 'cv', number = 5, search = 'grid')
+#Use the declared variables to preform the grid search
+#Truthfully I don't really understand the splitrule, but the function said I needed it and gini is what came up when I researched it.
+tunegrid = expand.grid(mtry = sampled_variables, min.node.size = node_size, splitrule = 'gini')
+grid_fits = train(y~., data = vowel,metric = 'Accuracy', method = 'ranger',tuneGrid=tunegrid, trControl=control)
+#Display results
+grid_fits
+```
+The final values that provided the best model was 3 randomly sampled candidates at each split, with a minimum terminal node size of 1.
+
+##5. With the tuned model, make predictions using the majority vote method, and compute the misclassification rate using the ‘vowel.test’ data.
+
+```{r}
+set.seed(23188)
+#First, build best model using parameters from Q4
+best_fit = randomForest(y~., data = vowel, mtry = 3, nodesize = 1)
+#Load in data and remove row name row
+test = read.csv(url("https://web.stanford.edu/~hastie/ElemStatLearn/datasets/vowel.test"))
+test = test[,2:ncol(test)]
+test$y = as.factor(test$y)
+#Predict using best fit
+preds = predict(best_fit, newdata = test)
+#Create confusion matrix
+confusionMatrix(test$y,preds)
+```
+
+My accuracy using this method came out to be .5887. This means our misclassification rate is .4113, or 41%.
